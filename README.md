@@ -29,10 +29,6 @@ uv sync
 uv run python qtsa_comparison.py
 ```
 
-**Opcja B: Jako Jupyter Notebook**
-```bash
-jupyter notebook qtsa_comparison.ipynb
-```
 
 ## 📊 Struktura projektu
 
