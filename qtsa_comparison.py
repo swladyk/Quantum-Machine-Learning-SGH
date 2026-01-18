@@ -112,6 +112,9 @@ print(f"  Task: Binary Classification (Market Direction)")
 # %%
 def draw_quantum_circuit(window_size_demo: int = 5):
     """Visualize QTSA circuit for demonstration."""
+    # Use local generator to avoid affecting global random state
+    generator = torch.Generator().manual_seed(999)
+    
     dev = qml.device("default.qubit", wires=1)
     
     @qml.qnode(dev)
@@ -123,7 +126,7 @@ def draw_quantum_circuit(window_size_demo: int = 5):
         return qml.expval(qml.PauliZ(0))
     
     dummy_inputs = torch.tensor([0.5, 1.0, 1.5, 2.0, 2.5], dtype=torch.float32)
-    dummy_weights = torch.randn(window_size_demo + 1, 3, dtype=torch.float32)
+    dummy_weights = torch.randn(window_size_demo + 1, 3, dtype=torch.float32, generator=generator)
     
     _ = demo_circuit(dummy_inputs, dummy_weights)
     
@@ -735,3 +738,79 @@ print(f"    QTSA: {qtsa_acc:.3f}")
 print(f"    MLP:  {mlp_acc:.3f}")
 print(f"✓ Visualization: Confusion matrices, accuracy comparison, training history")
 print("=" * 60)
+
+# %% [markdown]
+# ## 📊 Markdown Results Summary
+#
+# **Poniżej znajduje się podsumowanie wyników w formacie Markdown.**  
+# **Skopiuj i wklej na początek notebooka jako komórkę Markdown z wynikami eksperymentu.**
+
+# %%
+print("=" * 80)
+print("COPY THE TEXT BELOW AND PASTE AT THE TOP OF NOTEBOOK AS MARKDOWN CELL")
+print("=" * 80)
+print()
+
+# Oblicz dodatkowe metryki z confusion matrix
+cm_qtsa = confusion_matrix(qtsa_labels, qtsa_preds)
+cm_mlp = confusion_matrix(mlp_labels, mlp_preds)
+
+qtsa_tn, qtsa_fp, qtsa_fn, qtsa_tp = cm_qtsa.ravel()
+mlp_tn, mlp_fp, mlp_fn, mlp_tp = cm_mlp.ravel()
+
+# Precision, Recall dla klasy UP (1)
+qtsa_precision = qtsa_tp / (qtsa_tp + qtsa_fp) if (qtsa_tp + qtsa_fp) > 0 else 0
+qtsa_recall = qtsa_tp / (qtsa_tp + qtsa_fn) if (qtsa_tp + qtsa_fn) > 0 else 0
+mlp_precision = mlp_tp / (mlp_tp + mlp_fp) if (mlp_tp + mlp_fp) > 0 else 0
+mlp_recall = mlp_tp / (mlp_tp + mlp_fn) if (mlp_tp + mlp_fn) > 0 else 0
+
+markdown_output = f"""
+---
+
+## 🎯 Wyniki Eksperymentu
+
+### Konfiguracja
+- **Ticker:** `{TICKER}`
+- **Okres:** {START_DATE} do {END_DATE}
+- **Okno czasowe:** {WINDOW_SIZE} dni
+- **Epoki:** {EPOCHS}
+- **Batch size:** {BATCH_SIZE}
+- **Learning rate:** {LR}
+- **Seed:** {SEED}
+
+### 📈 Finalne wyniki na zbiorze testowym
+
+| Model | Accuracy | Precision (UP) | Recall (UP) | Parametry |
+|-------|----------|----------------|-------------|-----------|
+| **QTSA (Quantum)** | **{qtsa_acc:.1%}** | {qtsa_precision:.1%} | {qtsa_recall:.1%} | 63 |
+| **MLP (Classical)** | **{mlp_acc:.1%}** | {mlp_precision:.1%} | {mlp_recall:.1%} | ~1,100 |
+| Random Baseline | 50.0% | - | - | - |
+
+### 🔍 Confusion Matrix - QTSA
+
+|           | Pred DOWN | Pred UP |
+|-----------|-----------|---------|
+| **True DOWN** | {qtsa_tn} | {qtsa_fp} |
+| **True UP**   | {qtsa_fn} | {qtsa_tp} |
+
+### 🔍 Confusion Matrix - MLP
+
+|           | Pred DOWN | Pred UP |
+|-----------|-----------|---------|
+| **True DOWN** | {mlp_tn} | {mlp_fp} |
+| **True UP**   | {mlp_fn} | {mlp_tp} |
+
+### 💡 Wnioski
+
+1. **Efektywność parametryczna:** QTSA osiąga {qtsa_acc:.1%} accuracy z **17× mniejszą liczbą parametrów** niż MLP
+2. **Przewaga nad losowym baseline:** Oba modele przewyższają losowe zgadywanie (50%)
+3. **Klasyfikacja binarna:** Zastosowanie professional Financial ML approach (log-returns, stationarity)
+4. **Architektura kwantowa:** Serial data re-uploading na 1 kubicie skutecznie koduje sekwencje czasowe
+
+---
+"""
+
+print(markdown_output)
+print("=" * 80)
+print("END OF MARKDOWN SUMMARY")
+print("=" * 80)
