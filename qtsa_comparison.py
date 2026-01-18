@@ -112,9 +112,6 @@ print(f"  Task: Binary Classification (Market Direction)")
 # %%
 def draw_quantum_circuit(window_size_demo: int = 5):
     """Visualize QTSA circuit for demonstration."""
-    # Use local generator to avoid affecting global random state
-    generator = torch.Generator().manual_seed(999)
-    
     dev = qml.device("default.qubit", wires=1)
     
     @qml.qnode(dev)
@@ -126,7 +123,7 @@ def draw_quantum_circuit(window_size_demo: int = 5):
         return qml.expval(qml.PauliZ(0))
     
     dummy_inputs = torch.tensor([0.5, 1.0, 1.5, 2.0, 2.5], dtype=torch.float32)
-    dummy_weights = torch.randn(window_size_demo + 1, 3, dtype=torch.float32, generator=generator)
+    dummy_weights = torch.randn(window_size_demo + 1, 3, dtype=torch.float32)
     
     _ = demo_circuit(dummy_inputs, dummy_weights)
     
